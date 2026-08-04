@@ -1,0 +1,16 @@
+{
+  "name": "qa-harness-piloto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "Davidson Luna <davidsonluna@gmail.com>",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.78",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.1.2"
+  }
+}
