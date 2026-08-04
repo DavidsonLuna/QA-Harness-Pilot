@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
-import { LoginPage } from '../pages/login.page';
-import { invalidOpenCartUser } from './fixtures/login.fixture';
+import { LoginPage } from '../../pages/login.page';
+import { invalidOpenCartUser } from '../fixtures/login.fixture';
 
 test.describe('OpenCart login page', () => {
   test('allows a returning customer to open password recovery', async ({ page }) => {
