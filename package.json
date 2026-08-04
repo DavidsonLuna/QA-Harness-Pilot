@@ -1,25 +1,30 @@
 {
   "name": "qa-harness-pilot",
   "version": "1.0.0",
-  "description": "Playwright E2E suite for OpenCart (QA Harness Pilot)",
+  "description": "Playwright quality suite covering E2E, API, contract, and accessibility tests.",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test",
+    "test:e2e": "npx playwright test tests/e2e",
+    "test:api": "npx playwright test tests/api",
+    "test:contract": "npx playwright test tests/contract",
+    "test:accessibility": "npx playwright test tests/accessibility",
     "test:headed": "npx playwright test --headed",
-    "install-playwright": "npx playwright install --with-deps"
+    "test:report": "npx playwright show-report",
+    "install-playwright": "npx playwright install --with-deps chromium webkit"
   },
-  "keywords": ["playwright", "e2e", "qa", "opencart"],
+  "keywords": ["playwright", "e2e", "api", "contract", "accessibility", "qa", "opencart"],
   "author": "Davidson Luna <davidsonluna@gmail.com>",
   "license": "MIT",
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/QA-Harness-Pilot.git"
+    "url": "git+https://github.com/DavidsonLuna/QA-Harness-Pilot.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/QA-Harness-Pilot/issues"
+    "url": "https://github.com/DavidsonLuna/QA-Harness-Pilot/issues"
   },
-  "homepage": "https://github.com/your-org/QA-Harness-Pilot#readme",
+  "homepage": "https://github.com/DavidsonLuna/QA-Harness-Pilot#readme",
   "devDependencies": {
     "@playwright/mcp": "^0.0.78",
     "@playwright/test": "^1.62.1",
