@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { LoginPage } from '../../pages/login.page';
-import { invalidOpenCartUser } from '../fixtures/login.fixture';
+import { invalidOpenCartLoginCases } from '../fixtures/login.fixture';
 
 test.describe('OpenCart login page', () => {
   test('allows a returning customer to open password recovery', async ({ page }) => {
@@ -11,15 +11,19 @@ test.describe('OpenCart login page', () => {
     await loginPage.openPasswordRecovery();
 
     await loginPage.assertOnPasswordRecoveryPage();
-  });
-
-  test('displays an error for invalid credentials', async ({ page }) => {
-    const loginPage = new LoginPage(page);
-
-    await loginPage.goto();
+    await page.goBack();
     await loginPage.assertOnLoginPage();
-
-    await loginPage.login(invalidOpenCartUser.email, invalidOpenCartUser.password);
-    await loginPage.assertLoginFailure('No match for E-Mail Address and/or Password.');
   });
+
+  for (const invalidCase of invalidOpenCartLoginCases) {
+    test(`displays an error for ${invalidCase.name}`, async ({ page }) => {
+      const loginPage = new LoginPage(page);
+
+      await loginPage.goto();
+      await loginPage.assertOnLoginPage();
+
+      await loginPage.login(invalidCase.email, invalidCase.password);
+      await loginPage.assertLoginFailure('No match for E-Mail Address and/or Password.');
+    });
+  }
 });
