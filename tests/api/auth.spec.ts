@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import net from 'net';
 import {
   fakeStoreApi,
   invalidApiLoginCases,
@@ -40,41 +41,73 @@ function getLoginUrl() {
 
 test.beforeAll(async () => {
   if (process.env.USE_LOCAL_MOCK === 'true') {
-    mockProcess = spawn('node', ['tests/mocks/mock-server.js'], {
-      env: { ...process.env, MOCK_PORT: mockPort },
-      stdio: ['pipe', 'pipe', 'pipe'],
-      cwd: process.cwd(),
-    });
-
-    // Forward mock stdout/stderr to test logs for diagnostics
-    mockProcess.stdout.on('data', (c) => {
-      // eslint-disable-next-line no-console
-      console.log('[mock stdout]', String(c).trim());
-    });
-    mockProcess.stderr.on('data', (c) => {
-      // eslint-disable-next-line no-console
-      console.error('[mock stderr]', String(c).trim());
-    });
-    mockProcess.on('error', (err) => {
-      // eslint-disable-next-line no-console
-      console.error('Mock process error:', err?.message || err);
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Mock server start timeout')), 10000);
-      mockProcess!.stdout.on('data', (chunk) => {
-        const s = String(chunk);
-        if (s.toLowerCase().includes('listening')) {
-          clearTimeout(timeout);
-          resolve();
+    // check if mock is already running on the port to avoid starting it twice
+    const portNum = parseInt(mockPort, 10) || 3001;
+    const isPortOpen = await new Promise<boolean>((resolve) => {
+      const socket = new net.Socket();
+      let resolved = false;
+      socket.setTimeout(1000);
+      socket.once('connect', () => {
+        resolved = true;
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once('error', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve(false);
         }
       });
-      mockProcess!.on('exit', (code, signal) => {
-        clearTimeout(timeout);
-        const info = signal ? `signal ${signal}` : `code ${code}`;
-        reject(new Error('Mock server exited early: ' + info));
+      socket.once('timeout', () => {
+        if (!resolved) {
+          resolved = true;
+          socket.destroy();
+          resolve(false);
+        }
       });
+      socket.connect(portNum, '127.0.0.1');
     });
+
+    if (!isPortOpen) {
+      mockProcess = spawn('node', ['tests/mocks/mock-server.js'], {
+        env: { ...process.env, MOCK_PORT: mockPort },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: process.cwd(),
+      });
+
+      // Forward mock stdout/stderr to test logs for diagnostics
+      mockProcess.stdout.on('data', (c) => {
+        // eslint-disable-next-line no-console
+        console.log('[mock stdout]', String(c).trim());
+      });
+      mockProcess.stderr.on('data', (c) => {
+        // eslint-disable-next-line no-console
+        console.error('[mock stderr]', String(c).trim());
+      });
+      mockProcess.on('error', (err) => {
+        // eslint-disable-next-line no-console
+        console.error('Mock process error:', err?.message || err);
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Mock server start timeout')), 10000);
+        mockProcess!.stdout.on('data', (chunk) => {
+          const s = String(chunk);
+          if (s.toLowerCase().includes('listening')) {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+        mockProcess!.on('exit', (code, signal) => {
+          clearTimeout(timeout);
+          const info = signal ? `signal ${signal}` : `code ${code}`;
+          reject(new Error('Mock server exited early: ' + info));
+        });
+      });
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(`Mock appears already running on port ${mockPort}, skipping spawn.`);
+    }
   }
 });
 
