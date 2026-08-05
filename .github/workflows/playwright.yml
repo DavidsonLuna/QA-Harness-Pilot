@@ -11,6 +11,8 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ./node_modules/.cache
     strategy:
       matrix:
         suite: [api, contract, e2e, accessibility]
@@ -23,6 +25,12 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit firefox
+      - name: Verify Playwright browsers installed
+        run: |
+          echo "Listing node_modules/.cache"
+          ls -la node_modules/.cache || true
+          echo "Check common expected files"
+          find node_modules/.cache -maxdepth 3 -type f -name 'headless_shell' -o -name 'pw_run.sh' || true
       - name: Run suite ${{ matrix.suite }}
         run: |
           case "${{ matrix.suite }}" in
