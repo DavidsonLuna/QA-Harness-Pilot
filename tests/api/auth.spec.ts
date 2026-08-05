@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import {
   fakeStoreApi,
   invalidApiLoginCases,
@@ -7,21 +8,73 @@ import {
   successStatus,
 } from '../fixtures/auth-api.fixture';
 
-async function debugResponse(response: any) {
-  if (!response.ok()) {
-    const body = await response.text();
-    // eslint-disable-next-line no-console
-    console.log('DEBUG response status:', response.status(), 'body:', body);
+let mockProcess: ChildProcessWithoutNullStreams | undefined;
+const mockPort = process.env.MOCK_PORT ?? '3001';
+
+async function debugResponse(response: any, label = '') {
+  const status = response.status();
+  const headersObj: Record<string, string> = {};
+  try {
+    const headers = response.headers ? response.headers() : {};
+    for (const k of Object.keys(headers)) {
+      // @ts-ignore index
+      headersObj[k] = headers[k];
+    }
+  } catch (e) {
+    // ignore header extraction errors
   }
+  let bodyText: string;
+  try {
+    bodyText = await response.text();
+  } catch (e) {
+    bodyText = `<unable to read body: ${String(e)}>`;
+  }
+  // eslint-disable-next-line no-console
+  console.log(`DEBUG ${label} response status: ${status}\nheaders: ${JSON.stringify(headersObj)}\nbody: ${bodyText}`);
 }
+
+function getLoginUrl() {
+  const base = process.env.USE_LOCAL_MOCK === 'true' ? `http://127.0.0.1:${mockPort}` : fakeStoreApi.baseUrl;
+  return `${base}${fakeStoreApi.loginPath}`;
+}
+
+test.beforeAll(async () => {
+  if (process.env.USE_LOCAL_MOCK === 'true') {
+    mockProcess = spawn('node', ['tests/mocks/mock-server.js'], {
+      env: { ...process.env, MOCK_PORT: mockPort },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Mock server start timeout')), 5000);
+      mockProcess!.stdout.on('data', (chunk) => {
+        const s = String(chunk);
+        if (s.toLowerCase().includes('listening')) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+      mockProcess!.on('exit', (code) => {
+        clearTimeout(timeout);
+        reject(new Error('Mock server exited early: ' + code));
+      });
+    });
+  }
+});
+
+test.afterAll(() => {
+  if (mockProcess) {
+    mockProcess.kill();
+  }
+});
 test.describe('Fake Store API authentication', () => {
   test('returns a token for valid credentials', async ({ request }) => {
-    const response = await request.post(`${fakeStoreApi.baseUrl}${fakeStoreApi.loginPath}`, {
+    const response = await request.post(getLoginUrl(), {
       data: JSON.stringify(validApiUser),
       headers: { 'Content-Type': 'application/json' },
     });
 
-    await debugResponse(response);
+    await debugResponse(response, 'login-valid');
     await expect(response).toBeOK();
     expect([successStatus, 201]).toContain(response.status());
     const body = (await response.json()) as { token: string };
@@ -30,12 +83,12 @@ test.describe('Fake Store API authentication', () => {
   });
 
   test('rejects invalid credentials', async ({ request }) => {
-    const response = await request.post(`${fakeStoreApi.baseUrl}${fakeStoreApi.loginPath}`, {
+    const response = await request.post(getLoginUrl(), {
       data: JSON.stringify(invalidApiUser),
       headers: { 'Content-Type': 'application/json' },
     });
 
-    await debugResponse(response);
+    await debugResponse(response, 'login-invalid');
     expect(response.status()).toBe(401);
     const text = (await response.text()).trim().toLowerCase();
     expect(text).toContain('username');
@@ -44,12 +97,12 @@ test.describe('Fake Store API authentication', () => {
 
   for (const invalidCase of invalidApiLoginCases) {
     test(`rejects ${invalidCase.name}`, async ({ request }) => {
-      const response = await request.post(`${fakeStoreApi.baseUrl}${fakeStoreApi.loginPath}`, {
+      const response = await request.post(getLoginUrl(), {
         data: JSON.stringify(invalidCase.payload),
         headers: { 'Content-Type': 'application/json' },
       });
 
-      await debugResponse(response);
+      await debugResponse(response, `login-${invalidCase.name}`);
       expect(response.status()).toBe(invalidCase.expectedStatus);
       const text = (await response.text()).trim().toLowerCase();
       if (invalidCase.expectedMessage.includes('not provided')) {
@@ -66,7 +119,7 @@ test.describe('Fake Store API authentication', () => {
   test('handles duplicate valid login submissions independently', async ({ request }) => {
     const responses = await Promise.all(
       Array.from({ length: 2 }, () =>
-        request.post(`${fakeStoreApi.baseUrl}${fakeStoreApi.loginPath}`, {
+        request.post(getLoginUrl(), {
           data: JSON.stringify(validApiUser),
           headers: { 'Content-Type': 'application/json' },
         }),
@@ -74,7 +127,7 @@ test.describe('Fake Store API authentication', () => {
     );
 
     for (const response of responses) {
-      await debugResponse(response);
+      await debugResponse(response, 'login-duplicate');
       expect([successStatus, 201]).toContain(response.status());
       expect(((await response.json()) as { token: string }).token).not.toBe('');
     }
