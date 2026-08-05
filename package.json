@@ -13,7 +13,15 @@
     "test:report": "npx playwright show-report",
     "install-playwright": "npx playwright install --with-deps chromium webkit"
   },
-  "keywords": ["playwright", "e2e", "api", "contract", "accessibility", "qa", "opencart"],
+  "keywords": [
+    "playwright",
+    "e2e",
+    "api",
+    "contract",
+    "accessibility",
+    "qa",
+    "opencart"
+  ],
   "author": "Davidson Luna <davidsonluna@gmail.com>",
   "license": "MIT",
   "type": "commonjs",
@@ -27,7 +35,7 @@
   "homepage": "https://github.com/DavidsonLuna/QA-Harness-Pilot#readme",
   "devDependencies": {
     "@playwright/mcp": "^0.0.78",
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "1.56",
     "@types/node": "^26.1.2"
   }
 }
