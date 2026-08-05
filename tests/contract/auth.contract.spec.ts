@@ -5,6 +5,7 @@ test.describe('Fake Store API auth contract', () => {
   test('returns the documented login response contract', async ({ request }) => {
     const response = await request.post(`${fakeStoreApi.baseUrl}${fakeStoreApi.loginPath}`, {
       data: validApiUser,
+      headers: { 'Content-Type': 'application/json' },
     });
 
     expect(response.status()).toBe(201);
