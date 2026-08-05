@@ -3,6 +3,8 @@ export const fakeStoreApi = {
   loginPath: '/auth/login',
 };
 
+export const successStatus = 200;
+
 export const validApiUser = {
   username: 'mor_2314',
   password: '83r5^_',
