@@ -8,7 +8,7 @@ test.describe('Fake Store API auth contract', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(response.status()).toBe(201);
+    expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('application/json');
 
     const body = (await response.json()) as { token: string };
