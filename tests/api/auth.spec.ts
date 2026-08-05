@@ -42,11 +42,26 @@ test.beforeAll(async () => {
   if (process.env.USE_LOCAL_MOCK === 'true') {
     mockProcess = spawn('node', ['tests/mocks/mock-server.js'], {
       env: { ...process.env, MOCK_PORT: mockPort },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
+      cwd: process.cwd(),
+    });
+
+    // Forward mock stdout/stderr to test logs for diagnostics
+    mockProcess.stdout.on('data', (c) => {
+      // eslint-disable-next-line no-console
+      console.log('[mock stdout]', String(c).trim());
+    });
+    mockProcess.stderr.on('data', (c) => {
+      // eslint-disable-next-line no-console
+      console.error('[mock stderr]', String(c).trim());
+    });
+    mockProcess.on('error', (err) => {
+      // eslint-disable-next-line no-console
+      console.error('Mock process error:', err?.message || err);
     });
 
     await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Mock server start timeout')), 5000);
+      const timeout = setTimeout(() => reject(new Error('Mock server start timeout')), 10000);
       mockProcess!.stdout.on('data', (chunk) => {
         const s = String(chunk);
         if (s.toLowerCase().includes('listening')) {
@@ -54,9 +69,10 @@ test.beforeAll(async () => {
           resolve();
         }
       });
-      mockProcess!.on('exit', (code) => {
+      mockProcess!.on('exit', (code, signal) => {
         clearTimeout(timeout);
-        reject(new Error('Mock server exited early: ' + code));
+        const info = signal ? `signal ${signal}` : `code ${code}`;
+        reject(new Error('Mock server exited early: ' + info));
       });
     });
   }
