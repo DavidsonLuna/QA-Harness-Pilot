@@ -31,6 +31,18 @@ jobs:
           ls -la node_modules/.cache || true
           echo "Check common expected files"
           find node_modules/.cache -maxdepth 3 -type f -name 'headless_shell' -o -name 'pw_run.sh' || true
+      - name: Start FakeStore mock for contract tests
+        if: matrix.suite == 'contract'
+        run: |
+          npm run test:mock-server &
+          for i in {1..30}; do
+            if curl -sS -X POST http://127.0.0.1:3001/auth/login -H "Content-Type: application/json" -d '{}' >/dev/null 2>&1; then
+              echo "mock server up"
+              break
+            fi
+            echo "waiting for mock server..."
+            sleep 1
+          done
       - name: Run suite ${{ matrix.suite }}
         run: |
           case "${{ matrix.suite }}" in
@@ -41,6 +53,7 @@ jobs:
           esac
         env:
           PLAYWRIGHT_BROWSERS_PATH: ./node_modules/.cache
+          FAKESTORE_BASE_URL: ${{ matrix.suite == 'contract' && 'http://127.0.0.1:3001' || 'https://fakestoreapi.com' }}
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4

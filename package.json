@@ -11,6 +11,7 @@
     "test:accessibility": "npx playwright test tests/accessibility",
     "test:headed": "npx playwright test --headed",
     "test:report": "npx playwright show-report",
+    "test:mock-server": "node tests/mocks/mock-server.js",
     "install-playwright": "npx playwright install --with-deps chromium webkit"
   },
   "keywords": [

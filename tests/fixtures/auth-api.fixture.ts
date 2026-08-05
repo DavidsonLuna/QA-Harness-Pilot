@@ -1,5 +1,5 @@
 export const fakeStoreApi = {
-  baseUrl: 'https://fakestoreapi.com',
+  baseUrl: process.env.FAKESTORE_BASE_URL ?? 'https://fakestoreapi.com',
   loginPath: '/auth/login',
 };
 

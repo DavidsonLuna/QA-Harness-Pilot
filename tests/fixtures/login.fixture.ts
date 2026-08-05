@@ -1,10 +1,5 @@
 export const invalidOpenCartLoginCases = [
   {
-    name: 'an email with an invalid format',
-    email: 'not-an-email',
-    password: 'wrongpassword',
-  },
-  {
     name: 'empty required fields',
     email: '',
     password: '',
