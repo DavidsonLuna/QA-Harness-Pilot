@@ -1,14 +1,19 @@
-name: E2E Tests
+name: Playwright Tests
 
-on: [pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
-    timeout-minutes: 60
+  tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        suite: [api, contract, e2e, accessibility]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,13 +21,22 @@ jobs:
           node-version: lts/*
       - name: Install dependencies
         run: npm ci
-      - name: Install Chromium and WebKit
-        run: npx playwright install --with-deps chromium webkit
-      - name: Run quality tests
-        run: npm test
-      - uses: actions/upload-artifact@v4
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit firefox
+      - name: Run suite ${{ matrix.suite }}
+        run: |
+          case "${{ matrix.suite }}" in
+            api) npm run test:api ;;
+            contract) npm run test:contract ;;
+            e2e) npm run test:e2e ;;
+            accessibility) npm run test:accessibility ;;
+          esac
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ./node_modules/.cache
+      - name: Upload Playwright report
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.suite }}
           path: playwright-report/
           retention-days: 30
