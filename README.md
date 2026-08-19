@@ -1,4 +1,4 @@
-# QA Harness Pilot
+# Luninha STD (Spec-Driven Testing)
 
 [![E2E Tests](https://github.com/DavidsonLuna/QA-Harness-Pilot/actions/workflows/playwright.yml/badge.svg)](https://github.com/DavidsonLuna/QA-Harness-Pilot/actions/workflows/playwright.yml)
 
