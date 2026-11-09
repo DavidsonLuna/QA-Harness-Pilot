@@ -30,26 +30,19 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    // The public demo storefront has an expired HTTPS certificate.
+    ignoreHTTPSErrors: true,
   },
 
-  /* Chrome localmente; Chromium gerenciado pelo Playwright no CI. */
+  /* Use installed Chrome on macOS and CI; otherwise use bundled Chromium. */
   projects: [
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        channel: process.platform === 'darwin' && !process.env.CI ? 'chrome' : undefined,
+        channel: process.env.CI || process.platform === 'darwin' ? 'chrome' : undefined,
       },
     },
-    ...(process.env.CI
-      ? [
-          {
-            name: 'webkit',
-            use: { ...devices['Desktop Safari'] },
-          },
-        ]
-      : []),
-
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',

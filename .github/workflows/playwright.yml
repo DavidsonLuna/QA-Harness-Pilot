@@ -9,13 +9,13 @@ permissions:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       PLAYWRIGHT_BROWSERS_PATH: ./node_modules/.cache
     strategy:
       matrix:
-        suite: [api, contract, e2e, accessibility]
+        suite: [api, contract]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,14 +23,6 @@ jobs:
           node-version: lts/*
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit firefox
-      - name: Verify Playwright browsers installed
-        run: |
-          echo "Listing node_modules/.cache"
-          ls -la node_modules/.cache || true
-          echo "Check common expected files"
-          find node_modules/.cache -maxdepth 3 -type f -name 'headless_shell' -o -name 'pw_run.sh' || true
       - name: Start FakeStore mock for contract and api tests
         if: matrix.suite == 'contract' || matrix.suite == 'api'
         run: |
@@ -48,8 +40,6 @@ jobs:
           case "${{ matrix.suite }}" in
             api) npm run test:api ;;
             contract) npm run test:contract ;;
-            e2e) npm run test:e2e ;;
-            accessibility) npm run test:accessibility ;;
           esac
         env:
           PLAYWRIGHT_BROWSERS_PATH: ./node_modules/.cache
@@ -60,5 +50,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.suite }}
+          path: playwright-report/
+          retention-days: 30
+
+  ui-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Run E2E and accessibility suites
+        run: npx playwright test tests/e2e tests/accessibility
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ui
           path: playwright-report/
           retention-days: 30
