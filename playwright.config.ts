@@ -38,7 +38,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        channel: process.platform === 'darwin' && !process.env.CI ? 'chrome' : undefined,
+        channel: process.env.CI || process.platform === 'darwin' ? 'chrome' : undefined,
       },
     },
     /* Test against mobile viewports. */
