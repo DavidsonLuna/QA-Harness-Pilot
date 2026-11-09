@@ -2,6 +2,9 @@ name: Playwright Tests
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -72,3 +75,32 @@ jobs:
           name: playwright-report-ui
           path: playwright-report/
           retention-days: 30
+
+  deploy-architecture:
+    if: github.ref == 'refs/heads/main'
+    needs: [tests, ui-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp architecture-diagram.html _site/
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
