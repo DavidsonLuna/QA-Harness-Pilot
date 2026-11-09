@@ -26,14 +26,15 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    // The demo storefront's HTTPS certificate is expired.
-    baseURL: 'http://opencart.abstracta.us/index.php?route=common/home',
+    baseURL: 'https://opencart.abstracta.us/index.php?route=common/home',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    // The public demo storefront has an expired HTTPS certificate.
+    ignoreHTTPSErrors: true,
   },
 
-  /* Chrome localmente; Chromium gerenciado pelo Playwright no CI. */
+  /* Use installed Chrome on macOS and CI; otherwise use bundled Chromium. */
   projects: [
     {
       name: 'chromium',
