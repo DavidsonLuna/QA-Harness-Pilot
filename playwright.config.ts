@@ -41,15 +41,6 @@ export default defineConfig({
         channel: process.platform === 'darwin' && !process.env.CI ? 'chrome' : undefined,
       },
     },
-    ...(process.env.CI
-      ? [
-          {
-            name: 'webkit',
-            use: { ...devices['Desktop Safari'] },
-          },
-        ]
-      : []),
-
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',
