@@ -24,8 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit firefox
+        if: ${{ matrix.suite == 'e2e' || matrix.suite == 'accessibility' }}
+        run: npx playwright install --with-deps chromium webkit
       - name: Verify Playwright browsers installed
+        if: ${{ matrix.suite == 'e2e' || matrix.suite == 'accessibility' }}
         run: |
           echo "Listing node_modules/.cache"
           ls -la node_modules/.cache || true
