@@ -12,7 +12,11 @@
     "test:headed": "npx playwright test --headed",
     "test:report": "npx playwright show-report",
     "test:mock-server": "node tests/mocks/mock-server.js",
-    "install-playwright": "npx playwright install --with-deps chromium webkit"
+    "install-playwright": "npx playwright install --with-deps chromium webkit",
+    "betterwright": "betterwright",
+    "betterwright:login": "node ai/betterwright/exploratory/login.mjs",
+    "betterwright:agent": "node ai/betterwright/agent.mjs",
+    "betterwright:testmodel": "node ai/betterwright/test-model.mjs"
   },
   "keywords": [
     "playwright",
@@ -38,5 +42,8 @@
     "@playwright/mcp": "^0.0.78",
     "@playwright/test": "1.56",
     "@types/node": "^26.1.2"
+  },
+  "dependencies": {
+    "betterwright": "^1.10.0"
   }
 }
