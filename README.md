@@ -4,6 +4,35 @@
 
 Suíte Playwright para validar o OpenCart público e a Fake Store API. A cobertura é organizada em jornadas E2E, comportamento de API, contrato e acessibilidade.
 
+## Arquitetura
+
+[Abrir o diagrama interativo](https://davidsonluna.github.io/QA-Harness-Pilot/architecture-diagram.html)
+
+Prévia da estrutura da suíte:
+
+```mermaid
+flowchart LR
+  subgraph SUT["Sistemas sob teste"]
+    OC["OpenCart público"]
+    API["Fake Store API"]
+  end
+
+  subgraph Harness["QA Harness Pilot · Playwright"]
+    E2E["E2E"]
+    A11y["Acessibilidade"]
+    Contract["API e contrato"]
+    Pages["Page Objects"]
+    Fixtures["Fixtures e mock server"]
+  end
+
+  OC --> E2E
+  OC --> A11y
+  E2E --> Pages
+  A11y --> Pages
+  API --> Contract
+  Fixtures --> Contract
+```
+
 ## Cobertura
 
 | Suíte | Diretório | Foco |
@@ -49,9 +78,9 @@ Após uma execução, abra o relatório HTML local com:
 npm run test:report
 ```
 
-## CI e qualidade
+## CI e publicação
 
-A workflow `E2E Tests` é executada em pull requests, instala Chromium e WebKit e publica `playwright-report` como artefato mesmo quando um teste falha. Configure a regra de proteção da branch principal para exigir o check `E2E Tests / test` antes do merge.
+A workflow `Playwright Tests` roda em pull requests e em atualizações da branch `main`, publicando os relatórios como artefatos mesmo quando um teste falha. Após os testes passarem na `main`, ela publica o diagrama interativo no GitHub Pages.
 
 ## Licença
 
