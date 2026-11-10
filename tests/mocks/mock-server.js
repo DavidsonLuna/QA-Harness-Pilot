@@ -23,6 +23,12 @@ const server = http.createServer((req, res) => {
         return;
       }
 
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end(notProvidedMsg);
+        return;
+      }
+
       const { username, password } = payload;
 
       // Missing fields

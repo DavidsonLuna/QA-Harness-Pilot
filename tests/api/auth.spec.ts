@@ -8,6 +8,7 @@ import {
   validApiUser,
   successStatus,
 } from '../fixtures/auth-api.fixture';
+import { invalidApiBodyCases } from '../fixtures/auth-api-invalid-body.fixture';
 
 let mockProcess: ChildProcessWithoutNullStreams | undefined;
 const mockPort = process.env.MOCK_PORT ?? '3001';
@@ -171,6 +172,20 @@ test.describe('Fake Store API authentication', () => {
           expect(text).toContain(invalidCase.expectedMessage.toLowerCase());
         }
       }
+    });
+  }
+
+  for (const invalidCase of invalidApiBodyCases) {
+    test(`rejects ${invalidCase.name}`, async ({ request }) => {
+      test.skip(process.env.USE_LOCAL_MOCK !== 'true', 'Malformed-body coverage is deterministic against the local mock.');
+
+      const response = await request.post(getLoginUrl(), {
+        data: invalidCase.body,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      expect(response.status()).toBe(400);
+      expect((await response.text()).trim().toLowerCase()).toContain('not provided');
     });
   }
 
