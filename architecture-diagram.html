@@ -615,8 +615,8 @@
       report: {
         title: "HTML Reporter & Artefatos",
         tag: "REPORTS",
-        desc: "Playwright gera relatórios HTML em playwright-report/ e coleta trace na primeira nova tentativa. Execuções k6 geram relatórios executivos interativos separados em performance-reports/.",
-        files: ["playwright.config.ts", "playwright-report/index.html"],
+        desc: "O relatório executivo Playwright é a página inicial em playwright-report/index.html, com filtros, gráficos por suíte/status e busca. O relatório nativo detalhado, com traces e anexos, fica em details/. Execuções k6 geram relatórios executivos separados.",
+        files: ["playwright.config.ts", "tests/reporters/executive-reporter.js", "playwright-report/index.html", "playwright-report/details/"],
         code: "npx playwright show-report"
       },
       suites: {

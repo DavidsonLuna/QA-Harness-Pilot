@@ -21,8 +21,11 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  /* Keep the native report for deep debugging and make the executive report the landing page. */
+  reporter: [
+    ['html', { outputFolder: 'playwright-report/details', open: 'never' }],
+    ['./tests/reporters/executive-reporter.js', { outputFile: 'playwright-report/index.html' }],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
