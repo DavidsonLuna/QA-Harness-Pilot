@@ -2,7 +2,7 @@
 
 [![Playwright Tests](https://github.com/DavidsonLuna/QA-Harness-Pilot/actions/workflows/playwright.yml/badge.svg)](https://github.com/DavidsonLuna/QA-Harness-Pilot/actions/workflows/playwright.yml)
 
-**LunaFlow** é um projeto de engenharia de qualidade com Playwright e TypeScript para testar uma loja OpenCart pública e a API de autenticação Fake Store. Reúne testes de ponta a ponta no navegador, API, contrato e acessibilidade, além de Page Objects reutilizáveis, um mock local de API e exploração opcional do navegador com BetterWright.
+**LunaFlow** é um harness de engenharia de qualidade para uma loja OpenCart pública e a API de autenticação Fake Store. Reúne testes de ponta a ponta, API, contrato, acessibilidade e performance, com Playwright/TypeScript e Grafana k6, além de mock local, relatórios HTML executivos e exploração opcional com BetterWright.
 
 > O LunaFlow é uma suíte de testes para os sistemas de demonstração abaixo, não uma aplicação de e-commerce.
 
@@ -17,14 +17,15 @@ flowchart LR
   subgraph CI["01 · EXECUÇÃO E CI"]
     direction TB
     Actions["GitHub Actions"]
-    Report["Relatório HTML do Playwright"]
+    Reports["Relatórios HTML<br/>Playwright · K6"]
   end
 
   subgraph Framework["02 · FRAMEWORK E ARTEFATOS DE TESTE"]
     direction TB
-    Specs["Specs<br/>E2E · API · Contrato · Acessibilidade"]
+    Specs["Playwright<br/>E2E · API · Contrato · A11y"]
     Pages["Page Objects (POM)"]
     Engine["Motor Playwright"]
+    K6["Grafana k6<br/>Smoke · Performance · Load · Spike · Soak · Synthetic"]
     Mock["Servidor mock local<br/>Node.js · porta 3001"]
     Agent["Agente BetterWright"]
     Model["Modelo de IA configurado"]
@@ -42,7 +43,9 @@ flowchart LR
   Engine -->|navegador · HTTP| Store
   Specs -->|requisições API| Mock
   Mock -->|REST| API
-  Specs -->|gera| Report
+  K6 -->|HTTP autorizado| API
+  Specs -->|gera| Reports
+  K6 -->|resumo e métricas| Reports
   Agent -. prompt .-> Model
   Agent -. exploração do navegador .-> Store
 
@@ -50,8 +53,8 @@ flowchart LR
   classDef core fill:#25202a,stroke:#ff6b4a,color:#f3f4f6
   classDef ai fill:#30201d,stroke:#ff6b4a,color:#f3f4f6
   classDef sut fill:#172338,stroke:#60a5fa,color:#f3f4f6
-  class Actions,Report ci
-  class Specs,Pages,Engine,Mock core
+  class Actions,Reports ci
+  class Specs,Pages,Engine,Mock,K6 core
   class Agent,Model ai
   class Store,API sut
 ```
@@ -60,16 +63,18 @@ flowchart LR
 
 | Suíte | Local | Cobertura |
 | --- | --- | --- |
-| Ponta a ponta | `tests/e2e/` | Página inicial e login do OpenCart, recuperação de senha e tentativas de login inválidas. |
-| API | `tests/api/` | Autenticação Fake Store com credenciais válidas, inválidas, ausentes ou malformadas, além de submissões repetidas. |
-| Contrato | `tests/contract/` | Status HTTP, tipo de conteúdo JSON, campo do token e formato semelhante a JWT. |
-| Acessibilidade | `tests/accessibility/` | Visibilidade dos campos de login e do controle de envio. |
+| Ponta a ponta | `tests/e2e/` | Página inicial, recuperação de senha e login inválido no OpenCart. |
+| API | `tests/api/` | Login válido/inválido, payloads ausentes, nulos e malformados, campos inválidos e submissões concorrentes. |
+| Contrato | `tests/contract/` | Status, Content-Type, token semelhante a JWT e resposta de credenciais inválidas. |
+| Acessibilidade | `tests/accessibility/` | Rótulos e controles da tela de login. |
+| Performance | `tests/performance/` | K6: smoke, performance, carga, pico, resistência e monitoramento sintético da API. |
 
-Os testes de interface acessam a demonstração pública do OpenCart. Por padrão, os testes de API e contrato usam a Fake Store; é possível direcioná-los ao mock local para execuções repetíveis.
+Os testes de interface acessam a demonstração pública do OpenCart. API e contrato podem usar a Fake Store ou o mock local. Os testes de payload malformado são executados contra o mock para manter a cobertura determinística. O K6 não aponta para nenhum serviço por padrão: requer URL, credenciais e confirmação explícita de autorização.
 
 ## Requisitos
 
 - Node.js LTS e npm.
+- Grafana k6 (CLI) para as suítes de performance; consulte [instalação oficial](https://grafana.com/docs/k6/latest/set-up/install-k6/).
 - Google Chrome no macOS. A configuração do Playwright usa o Chrome instalado no macOS e no CI; em outras plataformas locais, utiliza o Chromium fornecido pelo Playwright.
 
 ## Instalação
@@ -100,6 +105,53 @@ npm run test:api
 npm run test:contract
 npm run test:accessibility
 ```
+
+### Performance e monitoramento sintético com K6
+
+Configure o endereço e a conta de teste de um ambiente sob sua responsabilidade. O exemplo abaixo usa o mock local:
+
+```bash
+# Terminal 1
+npm run test:mock-server
+
+# Terminal 2
+export K6_BASE_URL=http://127.0.0.1:3001
+export K6_USERNAME=mor_2314
+export K6_PASSWORD='83r5^_'
+export K6_CONFIRM_AUTHORIZED_TARGET=true
+
+npm run test:k6:smoke
+```
+
+Perfis disponíveis:
+
+| Comando | Intenção | Carga inicial |
+| --- | --- | --- |
+| `npm run test:k6:smoke` | Verificação rápida de disponibilidade, contrato feliz e rejeição de credencial inválida. | 1 VU, 1 iteração. |
+| `npm run test:k6:performance` | Medir latência e taxa de falha sob carga constante pequena. | 2 VUs por 1 minuto. |
+| `npm run test:k6:load` | Observar o comportamento com aumento gradual e sustentado de usuários virtuais. | Até 10 VUs por cerca de 3 minutos. |
+| `npm run test:k6:spike` | Observar a recuperação após um aumento abrupto de tráfego. | Pico de 20 VUs, execução curta. |
+| `npm run test:k6:soak` | Procurar degradação ao longo de uma execução prolongada. | 5 VUs por 10 minutos. |
+| `npm run test:k6:synthetic` | Executar verificações periódicas de jornada de API. | 1 requisição a cada 30 segundos, por 1 minuto. |
+
+Todos os perfis exigem `K6_CONFIRM_AUTHORIZED_TARGET=true`. Carga, pico e resistência também exigem `K6_ALLOW_HIGH_LOAD=true`; confirme janela, capacidade, limites e plano de interrupção com o responsável pelo serviço antes de habilitar a carga:
+
+```bash
+export K6_ALLOW_HIGH_LOAD=true
+npm run test:k6:load
+```
+
+Os perfis de execução e os limites iniciais podem ser ajustados com `K6_VUS`, `K6_DURATION`, `K6_P95_THRESHOLD_MS`, `K6_FAILURE_RATE_THRESHOLD`, `K6_API_PATH` e `K6_TIMEOUT`. Os limites são pontos de partida, não SLOs universais. Os testes de carga medem o endpoint de login; adapte o payload e os checks em `tests/performance/api.js` ao contrato do serviço sob teste.
+
+Cada execução gera `performance-reports/<perfil>.html`, um relatório autocontido com indicadores, gráficos alternáveis de latência/checks e leitura executiva. Para monitoramento contínuo, agende o perfil `synthetic` em um scheduler/Grafana Cloud Synthetic Monitoring, proteja credenciais em secrets e configure alertas e retenção fora do repositório. O script não cria agendamento nem envia tráfego automaticamente.
+
+#### Como interpretar os resultados
+
+- **Latência p95**: compare com o SLO acordado e com uma baseline do mesmo ambiente.
+- **Taxa de falha HTTP e checks**: diferencie falha técnica, rejeição esperada do smoke e falha do contrato.
+- **Carga**: avalie throughput, latência e erros juntos; não aprove capacidade com base em um único número.
+- **Spike/soak**: observe recuperação após o pico e tendências de latência/erros, memória e recursos do serviço em dashboards próprios.
+- Compare execuções no mesmo ambiente e anote versão, região, configuração e janela. O relatório do harness resume uma execução; não substitui observabilidade nem análise de tendência.
 
 Para abrir o navegador durante os testes:
 
@@ -143,7 +195,20 @@ npm run betterwright:testmodel
 
 A workflow **Playwright Tests** do GitHub Actions é executada em pull requests, atualizações da branch `main` e execuções manuais. As suítes de API e contrato rodam junto com os testes de ponta a ponta e acessibilidade no Ubuntu 24.04. Os relatórios do Playwright são publicados como artefatos, inclusive quando uma suíte falha.
 
+Os perfis K6 são intencionalmente executados de forma manual, fora do CI padrão, para impedir carga acidental em serviços compartilhados. Integre-os a pipelines de performance dedicados apenas com alvo autorizado, isolamento, limites de custo/carga e aprovação operacional.
+
 Quando todos os testes passam na `main`, a workflow publica o diagrama interativo no [GitHub Pages](https://davidsonluna.github.io/QA-Harness-Pilot/architecture-diagram.html).
+
+## Próximos tipos de teste recomendados
+
+1. **Capacidade e breakpoint**: encontrar limites de throughput e o ponto de saturação com limites e rollback definidos.
+2. **Resiliência e recuperação**: indisponibilidade/degradação controlada de dependências, failover e tempo para recuperação.
+3. **Rate limiting e quotas**: validar limites por usuário/tenant, headers e recuperação após throttling.
+4. **Integridade sob concorrência**: idempotência, duplicidade e consistência de dados em operações concorrentes.
+5. **Observabilidade e SLOs**: correlacionar métricas, logs e traces com as jornadas e alertas sintéticos.
+6. **Segurança e compatibilidade**: análise autorizada de controles OWASP, autorização entre tenants e compatibilidade de contratos/versionamento.
+
+Priorize primeiro capacity/breakpoint e rate limiting em staging, depois resiliência e integridade concorrente. Defina hipóteses, escopo, limites de impacto, responsáveis e critérios de interrupção antes de testes que alterem falhas ou dependências.
 
 ## Estrutura do projeto
 
@@ -157,9 +222,14 @@ tests/
   e2e/                 Testes de ponta a ponta no navegador
   fixtures/            Dados e configuração reutilizáveis
   mocks/               Mock local da Fake Store API
+  performance/         Perfis Grafana k6 e relatório executivo
+performance-reports/  Relatórios K6 gerados (ignorados pelo Git)
+.github/skills/        Skill QA Performance para agentes Copilot
 architecture-diagram.html
                        Diagrama interativo da arquitetura
 ```
+
+O fluxo e as instruções reutilizáveis para criar novos cenários de performance ficam em [`.github/skills/qa-performance/SKILL.md`](.github/skills/qa-performance/SKILL.md).
 
 ## Licença
 

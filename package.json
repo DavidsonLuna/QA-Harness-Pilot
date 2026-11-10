@@ -1,7 +1,7 @@
 {
   "name": "qa-harness-pilot",
   "version": "1.0.0",
-  "description": "Playwright quality suite covering E2E, API, contract, and accessibility tests.",
+  "description": "Quality engineering harness with Playwright, API contracts, accessibility, and Grafana k6 performance tests.",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test",
@@ -9,6 +9,12 @@
     "test:api": "npx playwright test tests/api",
     "test:contract": "npx playwright test tests/contract",
     "test:accessibility": "npx playwright test tests/accessibility",
+    "test:k6:smoke": "k6 run -e K6_PROFILE=smoke tests/performance/api.js",
+    "test:k6:performance": "k6 run -e K6_PROFILE=performance tests/performance/api.js",
+    "test:k6:load": "k6 run -e K6_PROFILE=load tests/performance/api.js",
+    "test:k6:spike": "k6 run -e K6_PROFILE=spike tests/performance/api.js",
+    "test:k6:soak": "k6 run -e K6_PROFILE=soak tests/performance/api.js",
+    "test:k6:synthetic": "k6 run -e K6_PROFILE=synthetic tests/performance/api.js",
     "test:headed": "npx playwright test --headed",
     "test:report": "npx playwright show-report",
     "test:mock-server": "node tests/mocks/mock-server.js",
