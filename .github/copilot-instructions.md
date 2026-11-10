@@ -22,6 +22,8 @@
 - Credenciais K6 devem vir de variáveis de ambiente/secret store e nunca ser salvas em fixtures versionadas
 - Não misture chamadas negativas na carga sustentada, exceto quando isso fizer parte da hipótese e estiver documentado
 - Mantenha relatórios de performance sem segredos e compare resultados com SLOs acordados, não com limites universais
+- Preserve o relatório executivo Playwright em `playwright-report/index.html` e mantenha o relatório nativo detalhado em `playwright-report/details/`
+- Ao modificar resultados, mantenha filtros/gráficos acessíveis e não renderize mensagens de erro como HTML não confiável
 
 ## O que aprendemos neste projeto
 - A API Fake Store pode retornar `201` para login válido e `401` para credenciais inválidas, então não presuma outros códigos

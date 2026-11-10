@@ -17,7 +17,7 @@ flowchart LR
   subgraph CI["01 · EXECUÇÃO E CI"]
     direction TB
     Actions["GitHub Actions"]
-    Reports["Relatórios HTML<br/>Playwright · K6"]
+    Reports["Relatório executivo + detalhes<br/>Playwright · K6"]
   end
 
   subgraph Framework["02 · FRAMEWORK E ARTEFATOS DE TESTE"]
@@ -159,11 +159,14 @@ Para abrir o navegador durante os testes:
 npm run test:headed
 ```
 
-Após uma execução, abra o relatório HTML do Playwright:
+Após uma execução, `npm run test:report` abre o novo resumo executivo do Playwright, com taxa de aprovação, resultados por suíte, filtros, busca e detalhes expansíveis de falhas. Use o link **Abrir relatório detalhado** dentro dele para traces, anexos e investigação completa; também é possível abrir diretamente:
 
 ```bash
 npm run test:report
+npm run test:report:details
 ```
+
+Os dois relatórios são gerados automaticamente em `playwright-report/` (`index.html` executivo e `details/` detalhado) e seguem juntos como artefato nas execuções do GitHub Actions.
 
 ## Mock local da API
 
@@ -223,6 +226,8 @@ tests/
   fixtures/            Dados e configuração reutilizáveis
   mocks/               Mock local da Fake Store API
   performance/         Perfis Grafana k6 e relatório executivo
+  reporters/           Relatório executivo Playwright
+playwright-report/     Relatório executivo e relatório detalhado Playwright
 performance-reports/  Relatórios K6 gerados (ignorados pelo Git)
 .github/skills/        Skill QA Performance para agentes Copilot
 architecture-diagram.html
